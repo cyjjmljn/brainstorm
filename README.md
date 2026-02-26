@@ -21,7 +21,7 @@ Getting real feedback on a research idea is unreasonably hard:
 
 Brainstorm gives you a structured academic debate in under 5 minutes. Four AI models independently assess your idea, then take turns attacking and defending it from different angles — with role-swapping so no model gets stuck in one position. A moderator synthesizes everything into actionable feedback.
 
-For about **$1–2 per full session** (Round 1 + debate + synthesis), you get ~5,000 words of substantive critique — the kind that usually takes weeks of waiting or an entire seminar to extract. It won't replace real peer review, but it will catch the obvious holes before you waste months on a flawed approach.
+For about **$0.20–0.50 per full session** (Round 1 + debate + synthesis) with default models, you get ~5,000 words of substantive critique — the kind that usually takes weeks of waiting or an entire seminar to extract. It won't replace real peer review, but it will catch the obvious holes before you waste months on a flawed approach.
 
 It's especially useful for:
 - **Early-stage research ideas** — stress-test before investing months of work
@@ -31,16 +31,17 @@ It's especially useful for:
 
 ### What Does It Cost?
 
-A typical full session (Round 1 → 1 debate round → synthesis) makes ~13 API calls. With the default response length (~800 words per model per round), that produces ~5,000 words of feedback.
+A typical full session (Round 1 → 1 debate round → synthesis) makes ~13 API calls. With the default response length (~800 words per model per round), that produces ~5,000 words of feedback. Here's what it actually costs, based on real session data:
 
-| Setup | Estimated Cost | Notes |
-|-------|---------------|-------|
-| All direct APIs (Claude + Gemini + Qwen + MiniMax) | ~$1.50 | Mixed pricing across providers |
-| All via OpenRouter | ~$1–3 | Depends on model selection |
-| Gemini-only (free tier) | $0 | Google AI Studio gives generous free quota |
-| Local models (Ollama) | $0 | Just your electricity bill |
+| Setup | R1 + 1 Debate | R1 + 3 Debates | Notes |
+|-------|:---:|:---:|-------|
+| Default (Sonnet + Gemini 3.1 + Qwen 3.5 + MiniMax) | ~$0.25 | ~$0.50 | Most of the cost is Claude |
+| Flagship (Opus + Gemini 3.1 + Qwen 3.5 + MiniMax) | ~$0.50–0.75 | ~$0.90–1.50 | Opus is 5x Sonnet pricing |
+| All via OpenRouter | ~$0.20–0.80 | ~$0.50–2.00 | Depends on model selection |
+| Gemini-only (free tier) | $0 | $0 | Google AI Studio gives generous free quota |
+| Local models (Ollama) | $0 | $0 | Just your electricity bill |
 
-Costs scale with response length and number of rounds. If you set instructions to `3,000–5,000 words` per response, expect roughly 3–5x the cost above. Each additional debate round adds ~$0.30–0.80 at default length. The synthesis step is a single call to one model.
+Costs scale with response length and number of rounds. If you set instructions to `3,000–5,000 words` per response, expect roughly 3–5x the cost above. Each additional debate round adds ~$0.05–0.20 at default length. The synthesis step is a single call to one model.
 
 ---
 
