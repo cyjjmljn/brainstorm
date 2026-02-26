@@ -65,14 +65,14 @@ MODELS = {
     ),
     "gemini": _model_config(
         "gemini",
-        default_model_id="gemini-2.5-pro",
+        default_model_id="gemini-3.1-pro-preview",
         default_base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         default_api_key_env="GOOGLE_API_KEY",
         extra_kwargs={"max_completion_tokens": 16384},
     ),
     "qwen": _model_config(
         "qwen",
-        default_model_id="qwen-plus",
+        default_model_id="qwen3.5-plus",
         default_base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
         default_api_key_env="DASHSCOPE_API_KEY",
     ),

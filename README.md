@@ -84,10 +84,10 @@ BRAINSTORM_BASE_URL=https://openrouter.ai/api/v1
 BRAINSTORM_API_KEY=sk-or-v1-...
 
 # Pick 4 different models from your provider's catalog
-CLAUDE_MODEL_ID=anthropic/claude-sonnet-4
-GEMINI_MODEL_ID=google/gemini-2.5-pro-preview
-QWEN_MODEL_ID=qwen/qwen3-235b-a22b
-MINIMAX_MODEL_ID=meta-llama/llama-4-maverick
+CLAUDE_MODEL_ID=anthropic/claude-sonnet-4-6
+GEMINI_MODEL_ID=google/gemini-3.1-pro-preview
+QWEN_MODEL_ID=qwen/qwen3.5-plus
+MINIMAX_MODEL_ID=minimax/minimax-m2.5
 ```
 
 **How it works:** `BRAINSTORM_BASE_URL` and `BRAINSTORM_API_KEY` are global defaults. All 4 model slots use them unless overridden by per-model variables (like `CLAUDE_BASE_URL`).
@@ -99,18 +99,18 @@ MINIMAX_MODEL_ID=meta-llama/llama-4-maverick
 ```bash
 BRAINSTORM_BASE_URL=https://models.inference.ai.azure.com
 BRAINSTORM_API_KEY=ghp_...
-CLAUDE_MODEL_ID=claude-sonnet-4
-GEMINI_MODEL_ID=gemini-2.5-pro
-QWEN_MODEL_ID=Qwen2.5-72B-Instruct
-MINIMAX_MODEL_ID=gpt-4o
+CLAUDE_MODEL_ID=claude-sonnet-4-6
+GEMINI_MODEL_ID=gemini-3.1-pro-preview
+QWEN_MODEL_ID=Qwen3.5-Plus
+MINIMAX_MODEL_ID=gpt-5-mini
 ```
 
 **Local models (Ollama / LM Studio / vLLM):**
 ```bash
 BRAINSTORM_BASE_URL=http://localhost:11434/v1
 BRAINSTORM_API_KEY=not-needed
-CLAUDE_MODEL_ID=llama3.3:70b
-GEMINI_MODEL_ID=qwen2.5:32b
+CLAUDE_MODEL_ID=llama4:maverick
+GEMINI_MODEL_ID=qwen3:32b
 QWEN_MODEL_ID=deepseek-r1:32b
 MINIMAX_MODEL_ID=gemma3:27b
 ```
@@ -128,9 +128,9 @@ You run a local proxy (e.g., for rate limiting, billing routing, or aggregation)
 # Global default: OpenRouter for most models
 BRAINSTORM_BASE_URL=https://openrouter.ai/api/v1
 BRAINSTORM_API_KEY=sk-or-v1-...
-GEMINI_MODEL_ID=google/gemini-2.5-pro-preview
-QWEN_MODEL_ID=qwen/qwen3-235b-a22b
-MINIMAX_MODEL_ID=meta-llama/llama-4-maverick
+GEMINI_MODEL_ID=google/gemini-3.1-pro-preview
+QWEN_MODEL_ID=qwen/qwen3.5-plus
+MINIMAX_MODEL_ID=minimax/minimax-m2.5
 
 # Override: Claude goes direct to Anthropic
 CLAUDE_BASE_URL=https://api.anthropic.com/v1/
@@ -146,9 +146,9 @@ BRAINSTORM_API_KEY=my-proxy-key
 
 # Each slot uses a different upstream model via the proxy
 CLAUDE_MODEL_ID=anthropic/claude-sonnet-4-6
-GEMINI_MODEL_ID=google/gemini-2.5-pro
-QWEN_MODEL_ID=qwen/qwen-plus
-MINIMAX_MODEL_ID=minimax/MiniMax-M2.5
+GEMINI_MODEL_ID=google/gemini-3.1-pro-preview
+QWEN_MODEL_ID=qwen/qwen3.5-plus
+MINIMAX_MODEL_ID=minimax/minimax-m2.5
 ```
 
 **Priority order:** Per-model variable (`CLAUDE_API_KEY`) > Global fallback (`BRAINSTORM_API_KEY`) > Provider-specific env var (`ANTHROPIC_API_KEY`). So if you already have per-model keys set, adding `BRAINSTORM_*` won't break anything.
@@ -286,8 +286,8 @@ All configuration is done through environment variables in `.env`:
 | `CLAUDE_MODEL_ID` | `claude-sonnet-4-6` | Model ID for the Claude slot |
 | `CLAUDE_BASE_URL` | `https://api.anthropic.com/v1/` | API endpoint for Claude |
 | `CLAUDE_API_KEY` | — | API key for Claude (overrides both global and `ANTHROPIC_API_KEY`) |
-| `GEMINI_MODEL_ID` | `gemini-2.5-pro` | Model ID for the Gemini slot |
-| `QWEN_MODEL_ID` | `qwen-plus` | Model ID for the Qwen slot |
+| `GEMINI_MODEL_ID` | `gemini-3.1-pro-preview` | Model ID for the Gemini slot |
+| `QWEN_MODEL_ID` | `qwen3.5-plus` | Model ID for the Qwen slot |
 | `MINIMAX_MODEL_ID` | `MiniMax-M2.5` | Model ID for the MiniMax slot |
 | **Server** | | |
 | `BRAINSTORM_PORT` | `8765` | Server port |
