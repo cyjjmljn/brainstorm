@@ -12,13 +12,35 @@ It runs entirely on your machine. Your ideas never leave your computer except as
 
 ## Why This Exists
 
-When you're developing a research idea, you need someone to push back on it — but it's hard to get that kind of structured feedback quickly. Brainstorm simulates an academic seminar where multiple perspectives clash, evolve, and eventually converge on the strongest version of your idea.
+Getting real feedback on a research idea is unreasonably hard:
+
+- **Submit to a journal** → wait 3 months for Reviewer 2 to tell you your identification strategy is "unconvincing"
+- **Ask your supervisor** → your draft sits on their desk for a month, then they skim the abstract
+- **Go to a seminar** → make small talk for 20 minutes, get one useful question if you're lucky
+- **Argue with yourself in the shower** → doesn't count as peer review
+
+Brainstorm gives you a structured academic debate in under 5 minutes. Four AI models independently assess your idea, then take turns attacking and defending it from different angles — with role-swapping so no model gets stuck in one position. A moderator synthesizes everything into actionable feedback.
+
+For about **$1–2 per full session** (Round 1 + debate + synthesis), you get ~5,000 words of substantive critique — the kind that usually takes weeks of waiting or an entire seminar to extract. It won't replace real peer review, but it will catch the obvious holes before you waste months on a flawed approach.
 
 It's especially useful for:
 - **Early-stage research ideas** — stress-test before investing months of work
-- **Grant proposals** — anticipate reviewer objections
-- **Paper drafts** — find the weak spots in your argument
-- **Methodology design** — get multiple perspectives on your approach
+- **Grant proposals** — anticipate reviewer objections before the panel does
+- **Paper drafts** — find the weak spots Reviewer 2 will find anyway
+- **Methodology design** — get multiple perspectives on your identification strategy
+
+### What Does It Cost?
+
+A typical full session (Round 1 → 1 debate round → synthesis) makes ~13 API calls and generates ~5,000 words of feedback.
+
+| Setup | Estimated Cost | Notes |
+|-------|---------------|-------|
+| All direct APIs (Claude + Gemini + Qwen + MiniMax) | ~$1.50 | Mixed pricing across providers |
+| All via OpenRouter | ~$1–3 | Depends on model selection |
+| Gemini-only (free tier) | $0 | Google AI Studio gives generous free quota |
+| Local models (Ollama) | $0 | Just your electricity bill |
+
+Costs scale with the number of debate rounds. Each additional round adds ~$0.30–0.80. The synthesis step is a single call to one model.
 
 ---
 
