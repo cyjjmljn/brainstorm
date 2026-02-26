@@ -214,11 +214,37 @@ Between any two rounds, you can:
 
 - **Add notes** — Tell the models what to focus on, ask specific questions, or redirect the discussion. Notes are included in the context for all subsequent rounds.
 - **Add context** — Paste text or attach local files (papers, data descriptions, methodology notes) as background information.
-- **Set instructions** — Persistent instructions that apply to all rounds (e.g., "Respond in Chinese", "Focus on causal identification", "Assume we have access to administrative data").
+- **Edit instructions** — Persistent instructions injected into every model's system prompt. You can set these at session creation or change them mid-session.
 
-### Session Persistence
+### Instructions (System Prompt)
 
-Every session is saved as JSON + Markdown files in the `sessions/` folder. You can close the browser and come back later — your sessions are still there. You can also import the synthesis from a previous session as background for a new one, building on prior brainstorming.
+Instructions control *how* the models behave — language, tone, length, focus area. They apply to every round until you change them. Set them when creating a session, or edit them anytime from the debate view.
+
+**Example instructions:**
+
+| Goal | Instruction |
+|------|-------------|
+| Language | `Respond in Chinese.` or `用中文討論。` |
+| Length control | `Keep each response under 300 words.` |
+| Tone | `Be ruthless. Pretend you're tenured.` |
+| Focus area | `Focus on causal identification and endogeneity concerns.` |
+| Methodology | `Assume we have access to administrative panel data. Discuss feasible estimators.` |
+| Audience | `Write as if presenting to a grant review committee.` |
+| Combined | `用中文回答。每段回應不超過500字。著重討論實驗設計的外部效度。` |
+
+You can combine multiple instructions freely. They're just text — whatever you write gets prepended to the system prompt for all 4 models.
+
+### Building on Previous Sessions
+
+Every session is saved automatically. You can build on prior work in two ways:
+
+**Import from a previous session** — When creating a new session, expand "Background Context" and select a previous session from the dropdown. Brainstorm imports its synthesis (or summaries if no synthesis exists) as background context for the new session. This lets you iterate: run a first session to explore broadly, then start a focused follow-up session that builds on what was already discussed.
+
+**Start a new stage** — After synthesis, click "Start New Stage" to reset the debate cycle within the same session. All prior context (responses, summaries, notes) carries forward. Use this when you want to go deeper on the same idea without starting fresh.
+
+**When to use which:**
+- **Import** → the new idea is related but different (e.g., "Session 1 explored the theory; Session 2 focuses on experimental design")
+- **New stage** → same idea, another round of refinement (e.g., "the models missed X, let me push them harder")
 
 ---
 
