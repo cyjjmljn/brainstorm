@@ -31,7 +31,7 @@ It's especially useful for:
 
 ### What Does It Cost?
 
-A typical full session (Round 1 → 1 debate round → synthesis) makes ~13 API calls and generates ~5,000 words of feedback.
+A typical full session (Round 1 → 1 debate round → synthesis) makes ~13 API calls. With the default response length (~800 words per model per round), that produces ~5,000 words of feedback.
 
 | Setup | Estimated Cost | Notes |
 |-------|---------------|-------|
@@ -40,7 +40,7 @@ A typical full session (Round 1 → 1 debate round → synthesis) makes ~13 API 
 | Gemini-only (free tier) | $0 | Google AI Studio gives generous free quota |
 | Local models (Ollama) | $0 | Just your electricity bill |
 
-Costs scale with the number of debate rounds. Each additional round adds ~$0.30–0.80. The synthesis step is a single call to one model.
+Costs scale with response length and number of rounds. If you set instructions to `3,000–5,000 words` per response, expect roughly 3–5x the cost above. Each additional debate round adds ~$0.30–0.80 at default length. The synthesis step is a single call to one model.
 
 ---
 
@@ -246,15 +246,19 @@ Instructions control *how* the models behave — language, tone, length, focus a
 
 | Goal | Instruction |
 |------|-------------|
-| Language | `Respond in Chinese.` or `用中文討論。` |
-| Length control | `Keep each response under 300 words.` |
+| Language | `Respond in English.` / `用中文討論。` / `日本語で回答してください。` |
+| Length control | `Keep each response under 300–500 words.` or `Keep each response between 3,000–5,000 words.` |
 | Tone | `Be ruthless. Pretend you're tenured.` |
 | Focus area | `Focus on causal identification and endogeneity concerns.` |
 | Methodology | `Assume we have access to administrative panel data. Discuss feasible estimators.` |
 | Audience | `Write as if presenting to a grant review committee.` |
-| Combined | `用中文回答。每段回應不超過500字。著重討論實驗設計的外部效度。` |
 
 You can combine multiple instructions freely. They're just text — whatever you write gets prepended to the system prompt for all 4 models.
+
+**Examples:**
+- 中文: `用中文回答。每段不超過500字。著重討論實驗設計的外部效度。`
+- 日本語: `日本語で回答。各回答は800字以内。計量経済学の識別戦略に焦点を当てる。`
+- English: `Respond in English. Keep it under 500 words. Focus on external validity.`
 
 ### Building on Previous Sessions
 
