@@ -45,32 +45,126 @@ That's it. Open `http://localhost:8765` in your browser.
 
 ## Setting Up API Keys
 
-Copy `.env.example` to `.env` and fill in your keys. **You need at least 2 models** for a meaningful debate — the more models, the more diverse the perspectives.
+Copy `.env.example` to `.env` and configure for your situation. Brainstorm has 4 model "slots" — internally called `CLAUDE`, `GEMINI`, `QWEN`, `MINIMAX` — but you can put **any model** in any slot. The names are just labels.
 
-| Model | Provider | How to Get a Key | Free Tier? |
-|-------|----------|-----------------|------------|
-| **Claude** | [Anthropic](https://console.anthropic.com/) | Create account, go to API Keys | No (pay-per-use) |
-| **Gemini** | [Google AI Studio](https://aistudio.google.com/apikey) | Click "Create API Key" | Yes (generous free tier) |
-| **Qwen** | [DashScope](https://dashscope.console.aliyun.com/) | Sign up, get API key | Yes (limited free credits) |
-| **MiniMax** | [MiniMax](https://platform.minimaxi.com/) | Sign up, get API key | Yes (limited free credits) |
+**You need at least 2 working models** for a meaningful debate. Pick the setup that matches what you have:
 
-If you only have one or two API keys, that's fine — just fill in what you have.
+---
 
-### Using Other Models
+### Scenario 1: Multiple API Keys (Power User)
 
-Any model with an OpenAI-compatible API works. Override the endpoint in `.env`:
+You have accounts with multiple providers. Set each key directly:
 
 ```bash
-# Example: use a local Ollama model instead of Claude
-CLAUDE_BASE_URL=http://localhost:11434/v1
-CLAUDE_MODEL_ID=llama3
-CLAUDE_API_KEY=not-needed
-
-# Example: use OpenAI's GPT models
-CLAUDE_BASE_URL=https://api.openai.com/v1
-CLAUDE_MODEL_ID=gpt-4o
-CLAUDE_API_KEY=sk-your-openai-key
+# .env
+ANTHROPIC_API_KEY=sk-ant-...
+GOOGLE_API_KEY=AIza...
+DASHSCOPE_API_KEY=sk-...
+MINIMAX_API_KEY=eyJ...
 ```
+
+That's it. Each model uses its default endpoint. This gives you the most diverse debate — different architectures, different training data, different blind spots.
+
+| Model Slot | Default Provider | How to Get a Key | Free Tier? |
+|------------|------------------|-----------------|------------|
+| **Claude** | [Anthropic](https://console.anthropic.com/) | Create account → API Keys | No (pay-per-use) |
+| **Gemini** | [Google AI Studio](https://aistudio.google.com/apikey) | Click "Create API Key" | Yes (generous) |
+| **Qwen** | [DashScope](https://dashscope.console.aliyun.com/) | Sign up → API key | Yes (limited) |
+| **MiniMax** | [MiniMax](https://platform.minimaxi.com/) | Sign up → API key | Yes (limited) |
+
+---
+
+### Scenario 2: One Provider, Multiple Models (OpenRouter, GitHub Copilot, etc.)
+
+You only have one API key — say from [OpenRouter](https://openrouter.ai/) — but you want 4 different models debating. Use the **global fallback** variables:
+
+```bash
+# .env — OpenRouter example
+BRAINSTORM_BASE_URL=https://openrouter.ai/api/v1
+BRAINSTORM_API_KEY=sk-or-v1-...
+
+# Pick 4 different models from your provider's catalog
+CLAUDE_MODEL_ID=anthropic/claude-sonnet-4
+GEMINI_MODEL_ID=google/gemini-2.5-pro-preview
+QWEN_MODEL_ID=qwen/qwen3-235b-a22b
+MINIMAX_MODEL_ID=meta-llama/llama-4-maverick
+```
+
+**How it works:** `BRAINSTORM_BASE_URL` and `BRAINSTORM_API_KEY` are global defaults. All 4 model slots use them unless overridden by per-model variables (like `CLAUDE_BASE_URL`).
+
+<details>
+<summary>More examples: GitHub Copilot, local models</summary>
+
+**GitHub Copilot / Azure AI:**
+```bash
+BRAINSTORM_BASE_URL=https://models.inference.ai.azure.com
+BRAINSTORM_API_KEY=ghp_...
+CLAUDE_MODEL_ID=claude-sonnet-4
+GEMINI_MODEL_ID=gemini-2.5-pro
+QWEN_MODEL_ID=Qwen2.5-72B-Instruct
+MINIMAX_MODEL_ID=gpt-4o
+```
+
+**Local models (Ollama / LM Studio / vLLM):**
+```bash
+BRAINSTORM_BASE_URL=http://localhost:11434/v1
+BRAINSTORM_API_KEY=not-needed
+CLAUDE_MODEL_ID=llama3.3:70b
+GEMINI_MODEL_ID=qwen2.5:32b
+QWEN_MODEL_ID=deepseek-r1:32b
+MINIMAX_MODEL_ID=gemma3:27b
+```
+
+</details>
+
+---
+
+### Scenario 3: Proxy / Mixed Setup
+
+You run a local proxy (e.g., for rate limiting, billing routing, or aggregation), or you want some models going through one provider and others through another. Override per-model:
+
+```bash
+# .env — Mix & match example
+# Global default: OpenRouter for most models
+BRAINSTORM_BASE_URL=https://openrouter.ai/api/v1
+BRAINSTORM_API_KEY=sk-or-v1-...
+GEMINI_MODEL_ID=google/gemini-2.5-pro-preview
+QWEN_MODEL_ID=qwen/qwen3-235b-a22b
+MINIMAX_MODEL_ID=meta-llama/llama-4-maverick
+
+# Override: Claude goes direct to Anthropic
+CLAUDE_BASE_URL=https://api.anthropic.com/v1/
+CLAUDE_API_KEY=sk-ant-...
+CLAUDE_MODEL_ID=claude-sonnet-4-6
+```
+
+```bash
+# .env — Local proxy example
+# All traffic goes through your proxy
+BRAINSTORM_BASE_URL=http://localhost:3000/v1
+BRAINSTORM_API_KEY=my-proxy-key
+
+# Each slot uses a different upstream model via the proxy
+CLAUDE_MODEL_ID=anthropic/claude-sonnet-4-6
+GEMINI_MODEL_ID=google/gemini-2.5-pro
+QWEN_MODEL_ID=qwen/qwen-plus
+MINIMAX_MODEL_ID=minimax/MiniMax-M2.5
+```
+
+**Priority order:** Per-model variable (`CLAUDE_API_KEY`) > Global fallback (`BRAINSTORM_API_KEY`) > Provider-specific env var (`ANTHROPIC_API_KEY`). So if you already have per-model keys set, adding `BRAINSTORM_*` won't break anything.
+
+---
+
+### Using an External Env File
+
+If you keep your API keys in a shared file (e.g., `~/.simulation.env`), point to it instead of duplicating keys:
+
+```bash
+# .env
+ENV_FILE=/path/to/.simulation.env
+```
+
+Brainstorm loads `.env` first, then overlays `ENV_FILE` on top. Per-model overrides in `.env` still take priority.
 
 ---
 
@@ -180,20 +274,27 @@ All configuration is done through environment variables in `.env`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| **Global fallbacks** | | |
+| `BRAINSTORM_BASE_URL` | — | Default base URL for all models (single-provider setup) |
+| `BRAINSTORM_API_KEY` | — | Default API key for all models (single-provider setup) |
+| **Per-provider keys** | | |
 | `ANTHROPIC_API_KEY` | — | Anthropic API key for Claude |
 | `GOOGLE_API_KEY` | — | Google API key for Gemini |
 | `DASHSCOPE_API_KEY` | — | DashScope API key for Qwen |
 | `MINIMAX_API_KEY` | — | MiniMax API key |
+| **Per-model overrides** | | |
 | `CLAUDE_MODEL_ID` | `claude-sonnet-4-6` | Model ID for the Claude slot |
 | `CLAUDE_BASE_URL` | `https://api.anthropic.com/v1/` | API endpoint for Claude |
+| `CLAUDE_API_KEY` | — | API key for Claude (overrides both global and `ANTHROPIC_API_KEY`) |
 | `GEMINI_MODEL_ID` | `gemini-2.5-pro` | Model ID for the Gemini slot |
 | `QWEN_MODEL_ID` | `qwen-plus` | Model ID for the Qwen slot |
 | `MINIMAX_MODEL_ID` | `MiniMax-M2.5` | Model ID for the MiniMax slot |
+| **Server** | | |
 | `BRAINSTORM_PORT` | `8765` | Server port |
 | `BRAINSTORM_ALLOWED_DIRS` | Project directory | Colon-separated paths for local file access |
 | `ENV_FILE` | — | Path to an additional env file to load |
 
-Each model slot (`CLAUDE`, `GEMINI`, `QWEN`, `MINIMAX`) supports `_MODEL_ID`, `_BASE_URL`, `_API_KEY`, and `_MAX_TOKENS` overrides.
+Each model slot (`CLAUDE`, `GEMINI`, `QWEN`, `MINIMAX`) supports `_MODEL_ID`, `_BASE_URL`, `_API_KEY`, and `_MAX_TOKENS` overrides. Priority: per-model > global fallback > provider-specific key > hardcoded default.
 
 ---
 

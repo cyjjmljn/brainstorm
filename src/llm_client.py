@@ -32,14 +32,23 @@ class LLMResponse:
 # Model registry — all use OpenAI-compatible endpoints
 # Each model can be overridden via environment variables:
 #   {NAME}_MODEL_ID, {NAME}_BASE_URL, {NAME}_API_KEY, {NAME}_MAX_TOKENS
+#
+# Global fallbacks (for single-provider setups like OpenRouter / Copilot):
+#   BRAINSTORM_BASE_URL — used when {NAME}_BASE_URL is not set
+#   BRAINSTORM_API_KEY  — used when {NAME}_API_KEY is not set
+_global_base_url = os.getenv("BRAINSTORM_BASE_URL", "")
+_global_api_key = os.getenv("BRAINSTORM_API_KEY", "")
+
+
 def _model_config(name: str, default_model_id: str, default_base_url: str,
                   default_api_key_env: str, default_max_tokens: int = 16384,
                   extra_kwargs: dict = None) -> dict:
     prefix = name.upper()
     config = {
         "model_id": os.getenv(f"{prefix}_MODEL_ID", default_model_id),
-        "base_url": os.getenv(f"{prefix}_BASE_URL", default_base_url),
-        "api_key": os.getenv(f"{prefix}_API_KEY", os.getenv(default_api_key_env, "")),
+        "base_url": os.getenv(f"{prefix}_BASE_URL", _global_base_url or default_base_url),
+        "api_key": os.getenv(f"{prefix}_API_KEY",
+                             _global_api_key or os.getenv(default_api_key_env, "")),
         "max_tokens": int(os.getenv(f"{prefix}_MAX_TOKENS", str(default_max_tokens))),
     }
     if extra_kwargs:

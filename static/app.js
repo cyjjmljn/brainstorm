@@ -2,6 +2,8 @@
 
 let currentSessionId = null;
 let pollInterval = null;
+let loadingMsgInterval = null;
+let loadingMsgIndex = 0;
 
 const MODEL_LABELS = {
   claude: "Claude Opus",
@@ -14,6 +16,41 @@ const POSITION_COLORS = {
   S1: "supporter", S2: "supporter",
   O1: "opponent", O2: "opponent",
   moderator: "moderator",
+};
+
+const TAGLINES = [
+  "Because arguing with yourself in the shower doesn't count as peer review.",
+  "Where ideas go to be stress-tested by machines.",
+  "Four models enter. Your ego might not survive.",
+  "Peer review, but the reviewers actually respond within minutes.",
+  "Your committee meeting, minus the stale coffee.",
+  "Now with 100% less passive-aggressive email chains.",
+];
+
+const LOADING_MESSAGES = {
+  r1: [
+    "Searching for significance in the noise...",
+    "Your idea is being peer-reviewed. At least these reviewers respond within minutes.",
+    "Four models walk into a seminar room...",
+    "Consulting the oracle. The oracle has opinions.",
+  ],
+  attacks: [
+    "Reviewer 2 has entered the chat...",
+    "Sharpening the red pen...",
+    "Finding holes in your identification strategy...",
+  ],
+  defenses: [
+    "Crafting a response to reviewers. Again.",
+    "Searching the literature for supporting evidence... any evidence...",
+  ],
+  roundtable: [
+    "The faculty lounge discussion has begun...",
+    "Colleagues are being collegial. For now.",
+  ],
+  synthesis: [
+    "Synthesizing. Unlike your literature review, this will actually get finished.",
+    "Writing the conclusion first, like a real academic.",
+  ],
 };
 
 // ── API helpers ─────────────────────────────────────────────
@@ -38,6 +75,7 @@ function showView(name) {
 
 function showList() {
   stopPolling();
+  stopLoadingMessages();
   currentSessionId = null;
   showView("list");
   loadSessions();
@@ -49,20 +87,25 @@ function showSetup() {
   initFileBrowser();
 }
 
+// ── Tagline ──────────────────────────────────────────────────
+
+function setRandomTagline() {
+  const el = document.getElementById("tagline");
+  if (el) el.textContent = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+}
+
 // ── Session List ────────────────────────────────────────────
 
 async function loadSessions() {
+  setRandomTagline();
   const sessions = await api("GET", "/sessions");
   const el = document.getElementById("session-list");
   if (sessions.length === 0) {
-    el.innerHTML = '<div style="color:#8b949e;padding:20px;text-align:center">No sessions yet</div>';
+    el.innerHTML = '<div style="color:#8b949e;padding:20px;text-align:center">No sessions yet. Your ideas are safe... for now.</div>';
     return;
   }
   el.innerHTML = sessions.map(s => {
-    const statusLabel = s.status === "new" ? "Ready" :
-      s.status === "complete" ? "Complete" :
-      s.status.includes("running") ? "Running..." :
-      s.status.replace(/_/g, " ");
+    const statusLabel = getStatusLabel(s.status);
     return `
     <div class="session-item" onclick="openSession('${s.session_id}')">
       <div><strong>${esc(s.title)}</strong></div>
@@ -90,7 +133,7 @@ async function loadPreviousSessions() {
 async function createSession() {
   const title = document.getElementById("inp-title").value.trim();
   const idea = document.getElementById("inp-idea").value.trim();
-  if (!title || !idea) { alert("Please fill in title and idea"); return; }
+  if (!title || !idea) { alert("You need at least a title and an idea. Even bad ideas count."); return; }
 
   const background = document.getElementById("inp-background").value.trim();
   const importSession = document.getElementById("sel-import").value;
@@ -106,6 +149,7 @@ async function createSession() {
     o2: document.getElementById("sel-o2").value,
   });
 
+  alert("May your p-values be forever significant.");
   openSession(res.session_id);
 }
 
@@ -150,17 +194,19 @@ async function refreshDebate() {
   // Start polling if running
   if (state.status.includes("running")) {
     startPolling();
+    startLoadingMessages(state.status);
   } else {
     stopPolling();
+    stopLoadingMessages();
   }
 }
 
 function getStatusLabel(status) {
-  if (status === "new") return "Ready";
+  if (status === "new") return "Awaiting sacrifice";
   if (status === "r1_running") return "Round 1 Running...";
-  if (status === "r1_pause") return "Round 1 Complete";
+  if (status === "r1_pause") return "The models have opinions";
   if (status === "synthesis_running") return "Synthesizing...";
-  if (status === "complete") return "Complete";
+  if (status === "complete") return "Survived peer review";
   // Dynamic debate rounds
   const m = status.match(/debate_(\d+)_(attacks_running|defenses_running|pause)/);
   if (m) {
@@ -168,16 +214,56 @@ function getStatusLabel(status) {
     const sub = m[2];
     if (sub === "attacks_running") return `Debate ${num} Attacks...`;
     if (sub === "defenses_running") return `Debate ${num} Defenses...`;
-    if (sub === "pause") return `Debate ${num} Complete`;
+    if (sub === "pause") return `Debate ${num} — Licking wounds`;
   }
   // Roundtable rounds
   const rt = status.match(/roundtable_(\d+)_(running|pause)/);
   if (rt) {
     const num = rt[1];
     if (rt[2] === "running") return `Roundtable ${num} Running...`;
-    if (rt[2] === "pause") return `Roundtable ${num} Complete`;
+    if (rt[2] === "pause") return `Roundtable ${num} — Temporary ceasefire`;
   }
   return status.replace(/_/g, " ");
+}
+
+// ── Loading Messages ────────────────────────────────────────
+
+function getLoadingPhase(status) {
+  if (status.startsWith("r1")) return "r1";
+  if (status.includes("attacks")) return "attacks";
+  if (status.includes("defenses")) return "defenses";
+  if (status.includes("roundtable")) return "roundtable";
+  if (status.includes("synthesis")) return "synthesis";
+  return "r1";
+}
+
+function startLoadingMessages(status) {
+  stopLoadingMessages();
+  const phase = getLoadingPhase(status);
+  const messages = LOADING_MESSAGES[phase] || LOADING_MESSAGES.r1;
+  loadingMsgIndex = Math.floor(Math.random() * messages.length);
+
+  // Set initial message
+  const el = document.getElementById("loading-msg");
+  if (el) el.textContent = messages[loadingMsgIndex % messages.length];
+
+  loadingMsgInterval = setInterval(() => {
+    const el = document.getElementById("loading-msg");
+    if (!el) return;
+    el.classList.add("loading-msg-fade");
+    setTimeout(() => {
+      loadingMsgIndex++;
+      el.textContent = messages[loadingMsgIndex % messages.length];
+      el.classList.remove("loading-msg-fade");
+    }, 400);
+  }, 3000);
+}
+
+function stopLoadingMessages() {
+  if (loadingMsgInterval) {
+    clearInterval(loadingMsgInterval);
+    loadingMsgInterval = null;
+  }
 }
 
 function renderAllRounds(container, state) {
@@ -326,20 +412,18 @@ function renderActions(state) {
   const buttons = [];
 
   if (state.status === "new") {
-    buttons.push(`<button class="btn-primary" onclick="runPhase('r1')">Start Round 1</button>`);
+    buttons.push(`<button class="btn-primary" onclick="runPhase('r1')">Release the models</button>`);
   } else if (state.status === "r1_pause" || state.status.match(/(debate|roundtable)_\d+_pause/)) {
     const nextRound = (state.current_round || 0) + 1;
-    const isSwap = nextRound % 2 === 0;
-    const swapLabel = isSwap ? " (Role Swap)" : "";
-    buttons.push(`<button class="btn-primary" onclick="runPhase('debate')">⚔️ Debate ${nextRound}${swapLabel}</button>`);
-    buttons.push(`<button class="btn-primary" onclick="runPhase('roundtable')" style="background:#238636">🤝 Roundtable ${nextRound}</button>`);
-    buttons.push(`<button class="btn-secondary" onclick="runPhase('synthesis')">Synthesis</button>`);
+    buttons.push(`<button class="btn-primary" onclick="runPhase('debate')">⚔️ Another round of punishment</button>`);
+    buttons.push(`<button class="btn-primary" onclick="runPhase('roundtable')" style="background:#238636">🤝 Let's be civil (for now)</button>`);
+    buttons.push(`<button class="btn-secondary" onclick="runPhase('synthesis')">🔮 The moment of truth</button>`);
   } else if (state.status === "complete") {
-    buttons.push(`<button class="btn-primary" onclick="newStage()">Start New Stage</button>`);
+    buttons.push(`<button class="btn-primary" onclick="newStage()">🔄 Masochist mode</button>`);
   }
 
   if (state.status.includes("running")) {
-    buttons.push(`<span><span class="spinner"></span> Processing...</span>`);
+    buttons.push(`<span><span class="spinner"></span> <span class="loading-msg" id="loading-msg">Processing...</span></span>`);
   }
 
   el.innerHTML = buttons.join("");
@@ -354,7 +438,7 @@ async function runPhase(phase) {
     startPolling();
     await refreshDebate();
   } catch (e) {
-    alert("Error: " + e.message);
+    alert("Lost connection. Much like your identification strategy.");
   }
 }
 
@@ -364,14 +448,14 @@ async function addNote() {
   if (!text) return;
   await api("POST", `/sessions/${currentSessionId}/notes`, { text });
   textarea.value = "";
-  alert("Note added. It will be included in the next round's context.");
+  alert("Note added. The models will pretend to read it.");
 }
 
 async function updateInstructions() {
   const textarea = document.getElementById("inp-edit-instructions");
   const instructions = textarea.value.trim();
   await api("POST", `/sessions/${currentSessionId}/instructions`, { instructions });
-  alert("Instructions updated. Will apply to all future rounds.");
+  alert("Instructions updated. The models now have new orders.");
 }
 
 async function addContext() {

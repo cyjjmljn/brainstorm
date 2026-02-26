@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brainstorm</title>
+<title>Brainstorm — Don't p-hack. Pray to LLM.</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
 .container { max-width: 720px; margin: 0 auto; padding: 12px; }
-h1 { font-size: 1.4em; margin-bottom: 12px; color: #58a6ff; }
+h1 { font-size: 1.4em; margin-bottom: 4px; color: #58a6ff; }
 h2 { font-size: 1.1em; margin: 16px 0 8px; color: #8b949e; }
+.subtitle { font-size: 0.85em; color: #8b949e; margin-bottom: 12px; font-style: italic; }
 
 /* Buttons */
 button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 500; }
@@ -44,6 +45,10 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
 .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Loading message fade */
+.loading-msg { display: inline; transition: opacity 0.4s ease; }
+.loading-msg-fade { opacity: 0; }
+
 /* Round section */
 .round-section { margin: 16px 0; }
 .round-header { cursor: pointer; padding: 10px; background: #21262d; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
@@ -73,6 +78,9 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
 .selected-file { display: inline-block; padding: 2px 8px; margin: 2px; background: #1f6feb33; color: #58a6ff; border-radius: 4px; font-size: 0.8em; cursor: pointer; }
 .selected-file:hover { background: #da363333; color: #f85149; }
 
+/* Footer */
+.site-footer { text-align: center; padding: 24px 0 12px; font-size: 0.75em; color: #484f58; font-style: italic; }
+
 /* Hide sections */
 .hidden { display: none; }
 
@@ -90,7 +98,8 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
 <!-- ── View: Session List ──────────────────────── -->
 <div id="view-list">
   <h1>Brainstorm</h1>
-  <button class="btn-primary" onclick="showSetup()" style="margin-bottom:12px">+ New Session</button>
+  <div class="subtitle" id="tagline"></div>
+  <button class="btn-primary" onclick="showSetup()" style="margin-bottom:12px">+ Sacrifice an idea</button>
   <div id="session-list"></div>
 </div>
 
@@ -98,16 +107,16 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
 <div id="view-setup" class="hidden">
   <h1>New Brainstorm</h1>
   <label>Title</label>
-  <input id="inp-title" placeholder="e.g. LLM behavioral economics">
+  <input id="inp-title" placeholder="e.g. Why everything we know about X is wrong">
   <label>Research Idea</label>
-  <textarea id="inp-idea" placeholder="Describe your research idea in detail..."></textarea>
+  <textarea id="inp-idea" placeholder="Describe your idea... The models won't scoop you. Probably."></textarea>
 
   <div class="collapsible-header" onclick="document.getElementById('instructions-section').classList.toggle('hidden')">
     + Instructions (optional — applies to every round)
   </div>
   <div id="instructions-section" class="hidden">
     <label>Session Instructions</label>
-    <textarea id="inp-instructions" placeholder="e.g. Respond in Chinese. Use formal academic tone. Focus on empirical methodology." style="min-height:60px"></textarea>
+    <textarea id="inp-instructions" placeholder="e.g. Respond in Chinese. Be ruthless. Pretend you're tenured." style="min-height:60px"></textarea>
   </div>
 
   <div class="collapsible-header" onclick="document.getElementById('context-section').classList.toggle('hidden')">
@@ -143,7 +152,7 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
     </div>
   </div>
   <div class="actions" style="margin-top:16px">
-    <button class="btn-primary" onclick="createSession()">Start Brainstorm</button>
+    <button class="btn-primary" onclick="createSession()">Into the arena</button>
     <button class="btn-secondary" onclick="showList()">Cancel</button>
   </div>
 </div>
@@ -165,7 +174,7 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
   <!-- User Notes -->
   <div style="margin-top:16px">
     <label>Your Notes (will be added to context for next round)</label>
-    <textarea id="inp-note" placeholder="Add your thoughts, redirections, or new angles..." style="min-height:80px"></textarea>
+    <textarea id="inp-note" placeholder="Redirect the debate, ask pointed questions, or vent about Reviewer 2..." style="min-height:80px"></textarea>
     <div class="actions">
       <button class="btn-secondary" onclick="addNote()">Add Note</button>
     </div>
@@ -190,7 +199,7 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
       + Edit Instructions (System Prompt)
     </div>
     <div id="edit-instructions-section" class="hidden">
-      <textarea id="inp-edit-instructions" placeholder="Instructions injected into every model's system prompt..." style="min-height:60px"></textarea>
+      <textarea id="inp-edit-instructions" placeholder="e.g. Respond in Chinese. Be ruthless. Pretend you're tenured." style="min-height:60px"></textarea>
       <div class="actions">
         <button class="btn-secondary" onclick="updateInstructions()">Save Instructions</button>
       </div>
@@ -204,6 +213,8 @@ label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
     <button class="btn-secondary" onclick="showList()" style="font-size:0.85em">Back to Sessions</button>
   </div>
 </div>
+
+<div class="site-footer">Don't p-hack. Pray to LLM.</div>
 
 </div>
 <script src="/static/app.js"></script>
