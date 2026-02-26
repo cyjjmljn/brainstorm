@@ -1,121 +1,202 @@
-# Brainstorm — Multi-Model Research Debate Platform
+# Brainstorm
 
-A structured research brainstorming tool that uses 4 AI models in academic debate format. Models take turns as supporters and opponents of your research idea, with role-swapping across rounds. A moderator summarizes each round and produces a final synthesis.
+**Let 4 AI models argue about your research ideas so you don't have to argue with yourself.**
 
-**How it works:** You propose a research idea. Four AI models independently assess it (Round 1), then engage in structured debate rounds where they attack and defend the idea from different angles. A moderator synthesizes all arguments into actionable feedback.
+Brainstorm is a local web app that runs structured academic debates between multiple AI models. You propose a research idea, and the models take turns supporting and attacking it from different angles — with role-swapping between rounds so no model gets stuck in one position. A moderator synthesizes everything into actionable feedback.
+
+It runs entirely on your machine. Your ideas never leave your computer except as API calls to the model providers you configure.
+
+![Python](https://img.shields.io/badge/python-3.10+-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+
+---
+
+## Why This Exists
+
+When you're developing a research idea, you need someone to push back on it — but it's hard to get that kind of structured feedback quickly. Brainstorm simulates an academic seminar where multiple perspectives clash, evolve, and eventually converge on the strongest version of your idea.
+
+It's especially useful for:
+- **Early-stage research ideas** — stress-test before investing months of work
+- **Grant proposals** — anticipate reviewer objections
+- **Paper drafts** — find the weak spots in your argument
+- **Methodology design** — get multiple perspectives on your approach
+
+---
 
 ## Quick Start
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/brainstorm.git
+# 1. Clone
+git clone https://github.com/cyjjmljn/brainstorm.git
 cd brainstorm
 
-# 2. Configure API keys
+# 2. Set up API keys
 cp .env.example .env
-# Edit .env with your API keys (you need at least 2 models)
+# Open .env in any text editor and paste your API keys
 
 # 3. Run
 bash run.sh
-# Opens at http://localhost:8765
 ```
 
-Requires Python 3.10+.
+That's it. Open `http://localhost:8765` in your browser.
 
-## Configuration
+**Requirements:** Python 3.10+ (the script creates a virtual environment automatically).
 
-Copy `.env.example` to `.env` and add your API keys. You need at least 2 models configured for a meaningful debate.
+---
 
-| Model | Provider | API Key Variable | Free Tier? |
+## Setting Up API Keys
+
+Copy `.env.example` to `.env` and fill in your keys. **You need at least 2 models** for a meaningful debate — the more models, the more diverse the perspectives.
+
+| Model | Provider | How to Get a Key | Free Tier? |
 |-------|----------|-----------------|------------|
-| Claude | Anthropic | `ANTHROPIC_API_KEY` | No |
-| Gemini | Google | `GOOGLE_API_KEY` | Yes (limited) |
-| Qwen | Alibaba (DashScope) | `DASHSCOPE_API_KEY` | Yes (limited) |
-| MiniMax | MiniMax | `MINIMAX_API_KEY` | Yes (limited) |
+| **Claude** | [Anthropic](https://console.anthropic.com/) | Create account, go to API Keys | No (pay-per-use) |
+| **Gemini** | [Google AI Studio](https://aistudio.google.com/apikey) | Click "Create API Key" | Yes (generous free tier) |
+| **Qwen** | [DashScope](https://dashscope.console.aliyun.com/) | Sign up, get API key | Yes (limited free credits) |
+| **MiniMax** | [MiniMax](https://platform.minimaxi.com/) | Sign up, get API key | Yes (limited free credits) |
 
-You can override any model's endpoint, model ID, or max tokens via environment variables. See `.env.example` for details.
+If you only have one or two API keys, that's fine — just fill in what you have.
 
-### Using with other OpenAI-compatible providers
+### Using Other Models
 
-Any model with an OpenAI-compatible API works. Override the base URL and model ID:
+Any model with an OpenAI-compatible API works. Override the endpoint in `.env`:
 
 ```bash
-# Example: use a local Ollama model as "claude"
+# Example: use a local Ollama model instead of Claude
 CLAUDE_BASE_URL=http://localhost:11434/v1
 CLAUDE_MODEL_ID=llama3
 CLAUDE_API_KEY=not-needed
+
+# Example: use OpenAI's GPT models
+CLAUDE_BASE_URL=https://api.openai.com/v1
+CLAUDE_MODEL_ID=gpt-4o
+CLAUDE_API_KEY=sk-your-openai-key
 ```
 
-## How a Session Works
+---
+
+## How It Works
+
+### The Debate Flow
 
 ```
- Your Idea
-    │
-    ▼
- Round 1 (Neutral)     ← All 4 models independently assess the idea
-    │
-    ▼
- Moderator Summary     ← Synthesizes Round 1 findings
-    │
-    ▼
- Debate Rounds (1..N)  ← Models attack/defend with role-swapping
-    │                      (you can add notes between rounds)
-    ▼
- Synthesis             ← Final moderator synthesis of all rounds
+ You write a research idea
+         |
+         v
+   Round 1 (Neutral)          All 4 models independently assess your idea
+         |                     — strengths, weaknesses, directions, questions
+         v
+   Moderator Summary           Synthesizes Round 1 into key themes
+         |
+         v
+   Debate Round 1              S1, S2 attack  /  O1, O2 defend
+         |                     (or vice versa — roles are assigned)
+         v
+   Moderator Summary           What was argued, what was conceded
+         |
+    [You can add notes here to steer the discussion]
+         |
+         v
+   Debate Round 2              Roles SWAP — last round's attackers now defend
+         |                     They know the defense's weak points from the inside
+         v
+   ... more rounds ...         Keep going until you're satisfied
+         |
+         v
+   Final Synthesis             Comprehensive summary of all arguments,
+                               concessions, open questions, and next steps
 ```
 
-**Debate format:**
-- **S1, S2** (Supporters): Defend the idea, propose improvements
-- **O1, O2** (Opponents): Challenge assumptions, find weaknesses
-- Roles swap each round — last round's defenders become attackers
+### Three Discussion Modes
 
-**You can:**
-- Add notes/context between rounds to steer the debate
-- Run as many debate rounds as you want
-- Run "roundtable" rounds (collaborative instead of adversarial)
-- Import context from previous sessions
-- Attach local files as background context
+**Debate Rounds** — Adversarial. Two models attack, two defend. Roles swap each round so everyone experiences both sides. This is the core feature — it produces the sharpest, most rigorous feedback.
 
-## Architecture
+**Roundtable Rounds** — Collaborative. All models discuss freely as colleagues, without assigned sides. Useful when you want constructive brainstorming rather than adversarial stress-testing. You can alternate between debate and roundtable rounds.
 
-```
-brainstorm/
-├── src/
-│   ├── main.py           ← FastAPI app + REST API
-│   ├── models.py         ← Pydantic schemas
-│   ├── llm_client.py     ← Unified async LLM client
-│   ├── debate_engine.py  ← Round orchestration
-│   ├── session_store.py  ← File-based state (JSON + Markdown)
-│   └── prompts.py        ← Prompt templates
-├── static/app.js         ← Frontend (vanilla JS)
-├── templates/index.html  ← Single-page mobile-first UI
-├── sessions/             ← Session data (gitignored)
-├── .env.example          ← API key template
-├── requirements.txt
-└── run.sh                ← Start script
-```
+**Synthesis** — The moderator produces a comprehensive final report covering the strongest arguments for and against, unresolved questions, conditions for validity, and recommended next steps.
 
-- **Backend:** FastAPI + uvicorn (async Python)
-- **Frontend:** Vanilla JavaScript, no build step, mobile-first
-- **State:** File-based JSON + Markdown (no database needed)
-- **LLM calls:** All models via OpenAI-compatible `openai.AsyncOpenAI`
+### Steering the Discussion
 
-## REST API
+Between any two rounds, you can:
+
+- **Add notes** — Tell the models what to focus on, ask specific questions, or redirect the discussion. Notes are included in the context for all subsequent rounds.
+- **Add context** — Paste text or attach local files (papers, data descriptions, methodology notes) as background information.
+- **Set instructions** — Persistent instructions that apply to all rounds (e.g., "Respond in Chinese", "Focus on causal identification", "Assume we have access to administrative data").
+
+### Session Persistence
+
+Every session is saved as JSON + Markdown files in the `sessions/` folder. You can close the browser and come back later — your sessions are still there. You can also import the synthesis from a previous session as background for a new one, building on prior brainstorming.
+
+---
+
+## API Reference
+
+All functionality is available through a REST API, so you can integrate Brainstorm into other tools or scripts.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/sessions` | Create a new session |
 | `GET` | `/api/sessions` | List all sessions |
-| `GET` | `/api/sessions/{id}` | Get full session state |
-| `GET` | `/api/sessions/{id}/status` | Lightweight status (for polling) |
-| `POST` | `/api/sessions/{id}/run/r1` | Start Round 1 |
+| `POST` | `/api/sessions` | Create a new session |
+| `GET` | `/api/sessions/{id}` | Get full session data |
+| `GET` | `/api/sessions/{id}/status` | Lightweight status check (for polling) |
+| `POST` | `/api/sessions/{id}/run/r1` | Start Round 1 (neutral assessment) |
 | `POST` | `/api/sessions/{id}/run/debate` | Start a debate round |
 | `POST` | `/api/sessions/{id}/run/roundtable` | Start a roundtable round |
 | `POST` | `/api/sessions/{id}/run/synthesis` | Generate final synthesis |
 | `POST` | `/api/sessions/{id}/notes` | Add a user note |
-| `POST` | `/api/sessions/{id}/context` | Add background context |
+| `POST` | `/api/sessions/{id}/context` | Add background context (text/files) |
 | `POST` | `/api/sessions/{id}/instructions` | Update session instructions |
+
+Rounds run asynchronously — the API returns `202 Accepted` immediately and you poll `/api/sessions/{id}/status` until completion.
+
+---
+
+## Project Structure
+
+```
+brainstorm/
+├── src/
+│   ├── main.py           ← Web server and API routes
+│   ├── llm_client.py     ← Talks to all AI models (OpenAI-compatible)
+│   ├── debate_engine.py  ← Orchestrates rounds (parallel API calls)
+│   ├── prompts.py        ← All prompt templates
+│   ├── models.py         ← Data schemas
+│   └── session_store.py  ← File-based session storage
+├── static/app.js         ← Frontend logic
+├── templates/index.html  ← Single-page UI (mobile-friendly)
+├── sessions/             ← Your session data (gitignored)
+├── .env                  ← Your API keys (gitignored)
+├── .env.example          ← Template for .env
+├── requirements.txt      ← Python dependencies
+└── run.sh                ← Start script
+```
+
+**Tech stack:** FastAPI (async Python), vanilla JavaScript (no build step), file-based storage (no database).
+
+---
+
+## Configuration Reference
+
+All configuration is done through environment variables in `.env`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANTHROPIC_API_KEY` | — | Anthropic API key for Claude |
+| `GOOGLE_API_KEY` | — | Google API key for Gemini |
+| `DASHSCOPE_API_KEY` | — | DashScope API key for Qwen |
+| `MINIMAX_API_KEY` | — | MiniMax API key |
+| `CLAUDE_MODEL_ID` | `claude-sonnet-4-6` | Model ID for the Claude slot |
+| `CLAUDE_BASE_URL` | `https://api.anthropic.com/v1/` | API endpoint for Claude |
+| `GEMINI_MODEL_ID` | `gemini-2.5-pro` | Model ID for the Gemini slot |
+| `QWEN_MODEL_ID` | `qwen-plus` | Model ID for the Qwen slot |
+| `MINIMAX_MODEL_ID` | `MiniMax-M2.5` | Model ID for the MiniMax slot |
+| `BRAINSTORM_PORT` | `8765` | Server port |
+| `BRAINSTORM_ALLOWED_DIRS` | Project directory | Colon-separated paths for local file access |
+| `ENV_FILE` | — | Path to an additional env file to load |
+
+Each model slot (`CLAUDE`, `GEMINI`, `QWEN`, `MINIMAX`) supports `_MODEL_ID`, `_BASE_URL`, `_API_KEY`, and `_MAX_TOKENS` overrides.
+
+---
 
 ## License
 
-MIT
+[MIT](https://opensource.org/licenses/MIT) — do whatever you want with it. Use it, modify it, share it, build on it. No restrictions except keeping the license notice.
