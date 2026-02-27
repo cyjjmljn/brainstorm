@@ -15,6 +15,31 @@ def _get_model_for_position(session_state, position: str) -> str:
     raise ValueError(f"No model assigned to position {position}")
 
 
+def _session_header(state) -> str:
+    """Build a markdown header with session metadata (idea, background, instructions)."""
+    parts = [f"**Title:** {state.title}\n"]
+    parts.append(f"**Research Idea:**\n\n{state.idea}\n")
+    if state.instructions:
+        parts.append(f"**Instructions:** {state.instructions}\n")
+    if state.background:
+        bg = state.background
+        if len(bg) > 2000:
+            bg = bg[:2000] + "\n\n*(background truncated in export — full text in session.json)*"
+        parts.append(f"**Background Context:**\n\n{bg}\n")
+    return "\n".join(parts)
+
+
+def _notes_section(state, up_to_phase: str = "") -> str:
+    """Build a markdown section for user notes added so far."""
+    notes = state.user_notes
+    if not notes:
+        return ""
+    parts = ["\n**User Notes:**\n"]
+    for n in notes:
+        parts.append(f"- _{n.after_phase}_ — {n.text}")
+    return "\n".join(parts) + "\n"
+
+
 async def _call_and_record(
     session_id: str,
     position: str,
@@ -113,7 +138,8 @@ async def run_round1(session_id: str, lock: asyncio.Lock):
     results = await asyncio.gather(*tasks)
 
     # Save markdown
-    md_parts = [f"# Round 1: Neutral Discussion\n\nStage {state.stage} | {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"]
+    md_parts = [f"# Round 1: Neutral Discussion\n\nStage {state.stage} | {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+                + _session_header(state)]
     for r in results:
         status = f"**ERROR: {r.error}**" if r.error else r.text
         md_parts.append(f"## {r.position} — {r.model_name}\n\n{status}\n")
@@ -166,8 +192,10 @@ async def run_debate_round(session_id: str, lock: asyncio.Lock):
 
     # Save attack markdown
     swap_label = " (Role Swap)" if is_swap else ""
+    state = session_store.load_session(session_id)  # reload to get latest notes
     md_parts = [f"# Debate Round {round_num}: Attacks{swap_label}\n\n"
-                f"Stage {state.stage} | {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"]
+                f"Stage {state.stage} | {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+                + _notes_section(state)]
     for r in attack_results:
         status = f"**ERROR: {r.error}**" if r.error else r.text
         role_label = "NOW OPPONENT" if is_swap else "OPPONENT"
@@ -241,8 +269,10 @@ async def run_roundtable(session_id: str, lock: asyncio.Lock):
     results = await asyncio.gather(*tasks)
 
     # Save markdown
+    state = session_store.load_session(session_id)  # reload to get latest notes
     md_parts = [f"# Roundtable Round {round_num}\n\n"
-                f"Stage {state.stage} | {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"]
+                f"Stage {state.stage} | {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+                + _notes_section(state)]
     for r in results:
         status = f"**ERROR: {r.error}**" if r.error else r.text
         md_parts.append(f"## {r.position} — {r.model_name}\n\n{status}\n")
@@ -281,7 +311,9 @@ async def run_synthesis(session_id: str, lock: asyncio.Lock):
     session_store.save_markdown(session_id, "synthesis.md",
         f"# Synthesis — Stage {state.stage}\n\n"
         f"*{datetime.now().strftime('%Y-%m-%d %H:%M')}*\n\n"
-        f"{result.text}\n"
+        + _session_header(state) + "\n---\n\n"
+        + _notes_section(state)
+        + f"{result.text}\n"
     )
 
     # Record as response
