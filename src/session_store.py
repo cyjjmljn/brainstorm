@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .models import SessionState, PositionAssignment, RoundResponse, UserNote
 
-SESSIONS_DIR = Path("/Users/minime/research_project/brainstorm/sessions")
+SESSIONS_DIR = Path(__file__).resolve().parent.parent / "sessions"
 
 
 def create_session(title: str, idea: str, assignments: dict[str, str], background: str = "", instructions: str = "") -> SessionState:

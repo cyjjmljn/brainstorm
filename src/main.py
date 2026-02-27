@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -26,6 +26,14 @@ def get_lock(session_id: str) -> asyncio.Lock:
     if session_id not in _session_locks:
         _session_locks[session_id] = asyncio.Lock()
     return _session_locks[session_id]
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    path = BASE_DIR / "static" / "favicon.ico"
+    if path.exists():
+        return FileResponse(path, media_type="image/x-icon")
+    return HTMLResponse(status_code=204)
 
 
 # ── Request schemas ──────────────────────────────────────────────────────────
