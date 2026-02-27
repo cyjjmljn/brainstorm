@@ -106,7 +106,7 @@ async def call_model(model_name: str, system: str, user: str) -> LLMResponse:
                 api_key=config["api_key"],
                 base_url=config["base_url"],
                 max_retries=2,
-                timeout=120.0,
+                timeout=600.0,
             )
 
             kwargs = {
