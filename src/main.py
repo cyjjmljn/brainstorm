@@ -10,8 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from . import debate_engine, session_store
-from .models import UserNote
+from . import debate_engine, forge_engine, session_store
+from .models import PositionAssignment, UserNote
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 app = FastAPI(title="Brainstorm")
@@ -327,3 +327,189 @@ async def api_list_local_files(req: dict):
         pass
 
     return {"files": items, "current": str(p)}
+
+
+# ── Forge Routes ─────────────────────────────────────────────────────────────
+
+class CreateForgeRequest(BaseModel):
+    title: str
+    story: str = ""
+    evidence: str = ""
+    mode: str = "joint"            # "story_driven", "evidence_driven", "joint"
+    background: str = ""
+    background_files: list[str] = []
+    instructions: str = ""
+    w1: str = "claude"
+    w2: str = "gemini"
+    w3: str = "qwen"
+    w4: str = "minimax"
+
+
+@app.get("/forge", response_class=HTMLResponse)
+async def forge_index(request: Request):
+    return templates.TemplateResponse("forge.html", {"request": request})
+
+
+@app.get("/api/forge/sessions")
+async def api_forge_list():
+    all_sessions = session_store.list_sessions()
+    # Filter to forge sessions only
+    forge_sessions = []
+    for s in all_sessions:
+        try:
+            state = session_store.load_session(s["session_id"])
+            if state.session_type == "forge":
+                forge_sessions.append(s)
+        except Exception:
+            pass
+    return forge_sessions
+
+
+@app.post("/api/forge/sessions")
+async def api_forge_create(req: CreateForgeRequest):
+    background = build_background(text=req.background, files=req.background_files)
+    # Build idea from story + evidence for display
+    idea_parts = []
+    if req.story:
+        idea_parts.append(f"Story: {req.story[:200]}")
+    if req.evidence:
+        idea_parts.append(f"Evidence: {req.evidence[:200]}")
+    idea = " | ".join(idea_parts) if idea_parts else req.title
+
+    assignments = {"W1": req.w1, "W2": req.w2, "W3": req.w3, "W4": req.w4}
+    state = session_store.create_session(req.title, idea, assignments, background, req.instructions)
+
+    # Set forge-specific fields
+    state.session_type = "forge"
+    state.story = req.story
+    state.evidence = req.evidence
+    state.mode = req.mode
+    session_store.save_session(state)
+
+    return {"session_id": state.session_id, "status": state.status}
+
+
+@app.get("/api/forge/sessions/{session_id}")
+async def api_forge_get(session_id: str):
+    try:
+        state = session_store.load_session(session_id)
+        return state.model_dump()
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+
+@app.get("/api/forge/sessions/{session_id}/status")
+async def api_forge_status(session_id: str):
+    try:
+        state = session_store.load_session(session_id)
+        return {
+            "status": state.status,
+            "current_round": state.current_round,
+            "mode": state.mode,
+            "scores": state.scores,
+            "best_draft": state.best_draft,
+            "total_responses": len(state.responses),
+            "has_summaries": list(state.summaries.keys()),
+        }
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+
+@app.post("/api/forge/sessions/{session_id}/run/{phase}")
+async def api_forge_run(session_id: str, phase: str):
+    try:
+        state = session_store.load_session(session_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+    lock = get_lock(session_id)
+
+    if phase == "draft":
+        if state.status != "new":
+            raise HTTPException(400, f"Cannot run draft from status {state.status}")
+        asyncio.create_task(forge_engine.run_draft(session_id, lock))
+
+    elif phase == "refine":
+        if not state.status.endswith("_pause"):
+            raise HTTPException(400, f"Cannot refine from status {state.status}")
+        asyncio.create_task(forge_engine.run_refine(session_id, lock))
+
+    elif phase == "synthesis":
+        if not state.status.endswith("_pause"):
+            raise HTTPException(400, f"Cannot synthesize from status {state.status}")
+        asyncio.create_task(forge_engine.run_synthesis(session_id, lock))
+
+    else:
+        raise HTTPException(400, f"Unknown phase: {phase}. Use draft, refine, or synthesis.")
+
+    return {"status": "started", "phase": phase}
+
+
+@app.post("/api/forge/sessions/{session_id}/notes")
+async def api_forge_note(session_id: str, req: AddNoteRequest):
+    try:
+        state = session_store.load_session(session_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+    note = UserNote(
+        stage=state.stage,
+        after_phase=state.status.replace("_pause", ""),
+        text=req.text,
+    )
+    session_store.append_note(session_id, note)
+    return {"status": "added"}
+
+
+@app.post("/api/forge/sessions/{session_id}/context")
+async def api_forge_context(session_id: str, req: AddContextRequest):
+    try:
+        state = session_store.load_session(session_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+    new_context = build_background(text=req.text, files=req.files)
+    if state.background:
+        state.background += "\n\n---\n\n" + new_context
+    else:
+        state.background = new_context
+    session_store.save_session(state)
+    return {"status": "context_added"}
+
+
+@app.post("/api/forge/sessions/{session_id}/instructions")
+async def api_forge_instructions(session_id: str, req: UpdateInstructionsRequest):
+    try:
+        state = session_store.load_session(session_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+    state.instructions = req.instructions
+    session_store.save_session(state)
+    return {"status": "updated"}
+
+
+class UpdateModeRequest(BaseModel):
+    mode: str
+
+
+@app.post("/api/forge/sessions/{session_id}/mode")
+async def api_forge_mode(session_id: str, req: UpdateModeRequest):
+    if req.mode not in ("story_driven", "evidence_driven", "joint"):
+        raise HTTPException(400, f"Invalid mode: {req.mode}")
+    try:
+        state = session_store.load_session(session_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Session not found")
+
+    state.mode = req.mode
+    session_store.save_session(state)
+    return {"status": "updated", "mode": req.mode}
+
+
+@app.get("/api/forge/sessions/{session_id}/files/{filename}")
+async def api_forge_file(session_id: str, filename: str):
+    path = session_store.SESSIONS_DIR / session_id / filename
+    if not path.exists():
+        raise HTTPException(404, "File not found")
+    return {"content": path.read_text(encoding="utf-8")}

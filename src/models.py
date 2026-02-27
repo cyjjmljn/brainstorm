@@ -60,3 +60,11 @@ class SessionState(BaseModel):
     responses: list[RoundResponse] = Field(default_factory=list)
     summaries: dict[str, str] = Field(default_factory=dict)  # {"r1": "...", "r2": "..."}
     user_notes: list[UserNote] = Field(default_factory=list)
+
+    # ── Forge-specific fields (optional, backward-compatible) ────────────────
+    session_type: str = "brainstorm"  # "brainstorm" or "forge"
+    story: str = ""                   # research narrative (forge)
+    evidence: str = ""                # empirical findings (forge)
+    mode: str = "joint"               # "story_driven", "evidence_driven", "joint" (forge)
+    scores: dict = Field(default_factory=dict)      # {"draft": {"W1": {...}, ...}, "refine_1": {...}}
+    best_draft: str = ""              # position of current best (e.g. "W2")

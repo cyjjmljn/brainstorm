@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge — Competitive Paper Introduction</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
+.container { max-width: 800px; margin: 0 auto; padding: 12px; }
+h1 { font-size: 1.4em; margin-bottom: 4px; color: #f0883e; }
+h2 { font-size: 1.1em; margin: 16px 0 8px; color: #8b949e; }
+.subtitle { font-size: 0.85em; color: #8b949e; margin-bottom: 12px; font-style: italic; }
+
+button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 500; }
+.btn-primary { background: #f0883e; color: #fff; }
+.btn-primary:hover { background: #d2792e; }
+.btn-primary:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+.btn-secondary { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; }
+.btn-synthesis { background: #8957e5; color: #fff; }
+.btn-synthesis:hover { background: #7c3aed; }
+
+input, textarea, select { width: 100%; padding: 10px; border: 1px solid #30363d; border-radius: 6px; background: #161b22; color: #c9d1d9; font-size: 16px; font-family: inherit; -webkit-appearance: none; appearance: none; }
+select { -webkit-appearance: menulist; appearance: menulist; }
+textarea { min-height: 120px; resize: vertical; }
+label { display: block; margin: 10px 0 4px; color: #8b949e; font-size: 0.85em; }
+
+.card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin: 8px 0; }
+.card-best { border-left: 4px solid #f0883e; }
+.card-writer { border-left: 4px solid #58a6ff; }
+.card-judge { border-left: 4px solid #d2a8ff; }
+.card h3 { font-size: 0.95em; margin-bottom: 6px; }
+.card-text { white-space: pre-wrap; font-size: 0.9em; max-height: 400px; overflow-y: auto; }
+
+/* Score bar */
+.score-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 0.85em; }
+.score-label { width: 100px; color: #8b949e; text-align: right; }
+.score-bar-bg { flex: 1; height: 16px; background: #21262d; border-radius: 3px; overflow: hidden; }
+.score-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.score-value { width: 30px; text-align: center; font-weight: 600; }
+.score-bar-elegance { background: #58a6ff; }
+.score-bar-surprise { background: #f0883e; }
+.score-bar-mechanism { background: #3fb950; }
+.score-bar-evidence_fit { background: #d2a8ff; }
+.score-bar-publishability { background: #f778ba; }
+
+.status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 500; }
+.status-running { background: #1f6feb33; color: #58a6ff; }
+.status-pause { background: #f0883e33; color: #f0883e; }
+.status-complete { background: #d2a8ff33; color: #d2a8ff; }
+
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #f0883e; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-msg { display: inline; transition: opacity 0.4s ease; }
+
+.round-section { margin: 16px 0; }
+.round-header { cursor: pointer; padding: 10px; background: #21262d; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+.round-header:hover { background: #30363d; }
+.round-body { padding: 8px 0; }
+
+.session-item { padding: 12px; border-bottom: 1px solid #21262d; cursor: pointer; }
+.session-item:hover { background: #161b22; }
+.session-meta { font-size: 0.8em; color: #8b949e; }
+
+.actions { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.mode-selector { display: flex; gap: 8px; margin: 8px 0; }
+.mode-btn { padding: 8px 16px; border: 1px solid #30363d; border-radius: 6px; background: #161b22; color: #8b949e; cursor: pointer; font-size: 0.9em; }
+.mode-btn.active { border-color: #f0883e; color: #f0883e; background: #f0883e11; }
+
+.collapsible-header { cursor: pointer; padding: 8px; background: #161b22; border-radius: 4px; margin: 8px 0 4px; font-size: 0.85em; color: #8b949e; }
+.collapsible-header:hover { color: #c9d1d9; }
+
+/* Tabs */
+.tab-bar { display: flex; border-bottom: 1px solid #30363d; margin-bottom: 8px; overflow-x: auto; }
+.tab { padding: 8px 16px; cursor: pointer; font-size: 0.9em; color: #8b949e; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab:hover { color: #c9d1d9; }
+.tab.active { color: #f0883e; border-bottom-color: #f0883e; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Total score badge */
+.total-score { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 700; }
+.total-high { background: #3fb95033; color: #3fb950; }
+.total-mid { background: #f0883e33; color: #f0883e; }
+.total-low { background: #f8514933; color: #f85149; }
+
+.site-footer { text-align: center; padding: 24px 0 12px; font-size: 0.75em; color: #484f58; font-style: italic; }
+.hidden { display: none; }
+
+@media (max-width: 480px) {
+  .model-grid { grid-template-columns: 1fr; }
+  .actions { flex-direction: column; }
+  button { width: 100%; }
+  .mode-selector { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- View: Session List -->
+<div id="view-list">
+  <h1>Forge</h1>
+  <div class="subtitle">Competitive Paper Introduction Platform</div>
+  <div class="actions" style="margin-bottom:12px">
+    <button class="btn-primary" onclick="showSetup()">+ New Forge Session</button>
+    <a href="/" style="text-decoration:none"><button class="btn-secondary" type="button">Brainstorm</button></a>
+  </div>
+  <div id="session-list"></div>
+</div>
+
+<!-- View: Setup -->
+<div id="view-setup" class="hidden">
+  <h1>New Forge Session</h1>
+  <label>Title</label>
+  <input id="inp-title" placeholder="e.g. Foreign Ownership and Corporate Governance">
+
+  <label>Story / Research Narrative</label>
+  <textarea id="inp-story" placeholder="Your theory, hypothesis, or existing draft introduction. Can be a single sentence or a full draft."></textarea>
+
+  <label>Evidence / Findings</label>
+  <textarea id="inp-evidence" placeholder="Regression results, data patterns, stylized facts... Paste raw findings here."></textarea>
+
+  <h2>Mode</h2>
+  <div class="mode-selector">
+    <div class="mode-btn" data-mode="story_driven" onclick="selectMode(this)">Story-Driven</div>
+    <div class="mode-btn active" data-mode="joint" onclick="selectMode(this)">Joint</div>
+    <div class="mode-btn" data-mode="evidence_driven" onclick="selectMode(this)">Evidence-Driven</div>
+  </div>
+  <div style="font-size:0.8em;color:#8b949e;margin-top:4px">
+    <span id="mode-desc">Joint: optimize both story and evidence fit together.</span>
+  </div>
+
+  <div class="collapsible-header" onclick="document.getElementById('instructions-section').classList.toggle('hidden')">
+    + Instructions (optional)
+  </div>
+  <div id="instructions-section" class="hidden">
+    <textarea id="inp-instructions" placeholder="e.g. Target AER style. Use Chinese. Keep close to original draft." style="min-height:60px"></textarea>
+  </div>
+
+  <div class="collapsible-header" onclick="document.getElementById('context-section').classList.toggle('hidden')">
+    + Background Context (optional)
+  </div>
+  <div id="context-section" class="hidden">
+    <textarea id="inp-background" placeholder="Literature notes, prior findings, related work..." style="min-height:80px"></textarea>
+  </div>
+
+  <h2>Writers</h2>
+  <div class="model-grid">
+    <div><label>W1</label><select id="sel-w1"><option value="claude">Claude Opus</option><option value="gemini">Gemini</option><option value="qwen">Qwen</option><option value="minimax">MiniMax</option></select></div>
+    <div><label>W2</label><select id="sel-w2"><option value="gemini" selected>Gemini</option><option value="claude">Claude Opus</option><option value="qwen">Qwen</option><option value="minimax">MiniMax</option></select></div>
+    <div><label>W3</label><select id="sel-w3"><option value="qwen" selected>Qwen</option><option value="claude">Claude Opus</option><option value="gemini">Gemini</option><option value="minimax">MiniMax</option></select></div>
+    <div><label>W4</label><select id="sel-w4"><option value="minimax" selected>MiniMax</option><option value="claude">Claude Opus</option><option value="gemini">Gemini</option><option value="qwen">Qwen</option></select></div>
+  </div>
+
+  <div class="actions" style="margin-top:16px">
+    <button class="btn-primary" onclick="createSession()">Start Forging</button>
+    <button class="btn-secondary" onclick="showList()">Cancel</button>
+  </div>
+</div>
+
+<!-- View: Forge Session -->
+<div id="view-forge" class="hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <h1 id="forge-title"></h1>
+    <span id="forge-status" class="status-badge"></span>
+  </div>
+
+  <!-- Score Dashboard -->
+  <div id="score-dashboard" class="card hidden">
+    <h3>Scores</h3>
+    <div id="score-content"></div>
+  </div>
+
+  <!-- Rounds Container -->
+  <div id="rounds-container"></div>
+
+  <!-- User Notes -->
+  <div style="margin-top:16px">
+    <label>Notes (injected into next round's context)</label>
+    <textarea id="inp-note" placeholder="Redirect the competition, add constraints, change story direction..." style="min-height:80px"></textarea>
+    <div class="actions">
+      <button class="btn-secondary" onclick="addNote()">Add Note</button>
+    </div>
+  </div>
+
+  <!-- Add Evidence -->
+  <div style="margin-top:8px">
+    <div class="collapsible-header" onclick="document.getElementById('add-evidence-section').classList.toggle('hidden')">
+      + Add More Evidence / Context
+    </div>
+    <div id="add-evidence-section" class="hidden">
+      <textarea id="inp-add-context" placeholder="Paste new findings, regression output, etc." style="min-height:60px"></textarea>
+      <div class="actions">
+        <button class="btn-secondary" onclick="addContext()">Add Evidence</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Instructions -->
+  <div style="margin-top:8px">
+    <div class="collapsible-header" onclick="document.getElementById('edit-instructions-section').classList.toggle('hidden')">
+      + Edit Instructions
+    </div>
+    <div id="edit-instructions-section" class="hidden">
+      <textarea id="inp-edit-instructions" placeholder="e.g. Keep closer to original. Target QJE style." style="min-height:60px"></textarea>
+      <div class="actions">
+        <button class="btn-secondary" onclick="updateInstructions()">Save Instructions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div id="action-buttons" class="actions" style="margin-top:16px"></div>
+
+  <div style="margin-top:16px">
+    <button class="btn-secondary" onclick="showList()" style="font-size:0.85em">Back to Sessions</button>
+  </div>
+</div>
+
+<div class="site-footer">Four models enter. One introduction leaves.</div>
+
+</div>
+<script src="/static/forge.js"></script>
+</body>
+</html>
